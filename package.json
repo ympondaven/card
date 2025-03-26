@@ -1,0 +1,30 @@
+{
+  "name": "card",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ympondaven/card.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ympondaven/card/issues"
+  },
+  "homepage": "https://github.com/ympondaven/card#readme",
+  "dependencies": {
+    "@langchain/community": "^0.3.36",
+    "@langchain/openai": "^0.4.5",
+    "axios-retry": "^4.5.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "faiss-node": "^0.5.1",
+    "officeparser": "^4.2.0",
+    "pdf-parse": "^1.1.1",
+    "redis": "^4.7.0"
+  }
+}
