@@ -95,7 +95,10 @@ export async function question (context, card, question ) {
     console.log ("response.anwser", response.answer.content )
     history.push ({ question:question, response:response.answer.content })
     console.log (history)
-    redisClient.set(sessionId, JSON.stringify(history));
+    //redisClient.set(sessionId, JSON.stringify(history));
+    await redisClient.set(sessionId, JSON.stringify(history), {
+        EX: 60*60*12
+      });
 
     return response.answer.content
   } catch (err) {
