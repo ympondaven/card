@@ -35,7 +35,10 @@ const apiKeyAuth = (req, res, next) => {
   });
 
 
-
+  app.use((req, res) => {
+    console.log(`URL non définie appelée : ${req.originalUrl}`);
+    res.status(404).send('Route non définie');
+});
 
 const PORT = process.env.PORT || 1515;
 app.listen(PORT, () => {
