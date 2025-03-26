@@ -19,13 +19,13 @@ const apiKeyAuth = (req, res, next) => {
   };
   app.use(apiKeyAuth);
 
-  app.post('/cards/prompt/:id', async (req, res) => {
+  app.post('/cards/prompt/', async (req, res) => {
     try {
         console.log('/cards/prompt/:id')  
-        const { prompt, sessionId }  = req.body
+        const { prompt, sessionId , email }  = req.body
 
-        console.log (decrypt(req.params.id), prompt)
-        let reponse = await question ({ sessionId:sessionId }, await decrypt(decodeURIComponent(req.params.id)), prompt)
+        console.log (decrypt(email), prompt)
+        let reponse = await question ({ sessionId:sessionId }, await decrypt(email), prompt)
         res.send(reponse)
 
     } catch (error) {
