@@ -19,7 +19,7 @@ const apiKeyAuth = (req, res, next) => {
   };
   app.use(apiKeyAuth);
 
-  app.post('/prompt/:id', async (req, res) => {
+  app.post('/cards/prompt/:id', async (req, res) => {
     try {
         const { prompt, sessionId }  = req.body
 
@@ -33,21 +33,10 @@ const apiKeyAuth = (req, res, next) => {
     }
   });
 
-  app.post('/key/:id', async (req, res) => {
-    try {
-      
-        
-
-        res.send(reponse)
-
-    } catch (error) {
-        console.log (error)
-      res.status(500).send(error.message);
-    }
-  });
 
 
-  const PORT = process.env.PORT || 1515;
+
+const PORT = process.env.PORT || 1515;
 app.listen(PORT, () => {
   console.log(`Serveur en écoute sur le port ${PORT}`);
 });
