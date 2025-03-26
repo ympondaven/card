@@ -21,6 +21,7 @@ const apiKeyAuth = (req, res, next) => {
 
   app.post('/cards/prompt/:id', async (req, res) => {
     try {
+        console.log('/cards/prompt/:id')
         const { prompt, sessionId }  = req.body
 
         console.log (decrypt(req.params.id), prompt)
