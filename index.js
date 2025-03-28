@@ -23,10 +23,11 @@ const apiKeyAuth = (req, res, next) => {
     try {
         console.log('/cards/prompt/:id')  
         const { prompt, sessionId , email2 }  = req.body
-        const email = req.query.email
-        console.log (email)
-        console.log (decrypt(email), prompt)
-        let reponse = await question ({ sessionId:sessionId }, await decrypt(email), prompt)
+        const email =  await decrypt(req.query.email)
+        console.log (email, prompt)
+        let reponse = await question ({ sessionId:sessionId }, email, prompt )
+        // export async function question(context, card, question, email) {
+        
         res.send(reponse)
 
     } catch (error) {
