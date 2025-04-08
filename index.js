@@ -4,6 +4,7 @@ config();
 
 import { question } from './request.js';
 import { decrypt } from './crypto.js';
+import { readFile } from 'fs/promises';
 
 const app = express();
 app.use(express.json());
@@ -19,7 +20,31 @@ app.use(express.json());
 // };
 // app.use(apiKeyAuth);
 
-// Route de l'API principale
+
+app.get('/cards/config', async (req, res) => {
+  try {
+    if (!req.query.email) {
+      return res.status(400).send("Le paramètre 'email' est requis dans l'URL");
+    }
+    // Déchiffrement de l'email
+    const email = await decrypt(req.query.email);
+    const filePath = `${process.env.FILES}/mails/${email}/config.json`;
+    
+    // Lecture du fichier de configuration
+    const configFile = await readFile(filePath, 'utf8');
+    const configData = JSON.parse(configFile);
+    
+    res.json(configData);
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la configuration:', error);
+    if (error.code === 'ENOENT') {
+      res.status(404).send("Configuration non trouvée pour l'utilisateur");
+    } else {
+      res.status(500).send("Erreur lors de la récupération de la configuration");
+    }
+  }
+});
+
 app.post('/cards/prompt/', async (req, res) => {
   try {
     const { prompt, sessionId } = req.body;
@@ -152,7 +177,9 @@ app.get('/cards/chat', (req, res) => {
 </head>
 <body>
   <div id="chat-container">
+    <div id="user-info"></div>  
     <div id="chat-log"></div>
+    
     <div id="input-container">
       <input type="text" id="message-input" placeholder="Tapez votre question ici..." />
       <button id="voice-btn">🎤</button>
@@ -179,6 +206,26 @@ app.get('/cards/chat', (req, res) => {
         return;
       }
       
+    
+
+      fetch(\`/cards/config?email=\${encodeURIComponent(email)}\`)
+      .then(response => {
+      if (!response.ok) {
+      throw new Error("Erreur lors de la récupération de la configuration");
+      }
+      return response.json();
+      })
+      .then(config => {
+        const userInfo = document.getElementById('user-info');
+        userInfo.innerHTML = \`
+          <img src="\${config.picture}" alt="Photo de \${config.name}" width="100px"/>
+          <div class="info-text">
+          <h2>\${config.name}</h2>
+          <div class="message bot-message">\${config.invite}</div>
+          </div>
+      \`;
+      })
+
       const chatLog = document.getElementById('chat-log');
       const messageInput = document.getElementById('message-input');
       const sendBtn = document.getElementById('send-btn');
