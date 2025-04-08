@@ -292,6 +292,9 @@ app.get('/cards/chat', (req, res) => {
                                 .replace(/https?:\\/\\/\\S+/g, '')
                                 .replace(/\\*/g, '');
             const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1.1;
+          utterance.pitch = 1.1;
             // Lorsque la lecture se termine, on masque le bouton Stop
             utterance.onend = () => {
               stopBtn.style.display = 'none';
