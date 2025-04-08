@@ -38,7 +38,7 @@ app.post('/cards/prompt/', async (req, res) => {
 });
 
 // Route pour retourner la page du front (chat)
-app.get('/chat', (req, res) => {
+app.get('/cards/chat', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
