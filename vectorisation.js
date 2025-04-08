@@ -13,11 +13,30 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
 import { PPTXLoader } from "@langchain/community/document_loaders/fs/pptx";
 import { AzureOpenAIEmbeddings } from "@langchain/openai";
+import { Document } from 'langchain/document';
+import { loadQAMapReduceChain } from "langchain/chains";
+import { AzureChatOpenAI } from "@langchain/openai";
+import FormData from 'form-data'; // On utilise ici le module form-data
+import axios from 'axios';
 
 const embeddings = new AzureOpenAIEmbeddings({
       azureOpenAIApiEmbeddingsDeploymentName: "text-embedding-3-large",
       maxConcurrency: 3
 });
+
+const llm = new AzureChatOpenAI({
+    model: "gpt-4o",
+    temperature: 0,
+    maxTokens: 4000,
+    maxRetries: 2,
+    verbose: false,
+    streaming: true, // Pour que handleLLMNewToken soit appelé à chaque token
+    azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+    azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+    azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+    azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
+  });
+
 
 // Extensions supportées pour le chargement
 const supportedExtensions = ['.pdf', '.docx', '.doc', '.json', '.txt', '.csv', '.ppt', '.pptx'];
@@ -123,33 +142,22 @@ async function processEmailDirectory(emailDirPath, vectorsDir) {
   }
 }
 
-/**
- * Fonction principale :
- * - Récupère le répertoire racine (ex: card) en argument.
- * - Vérifie l'existence des répertoires "mails" et "vectors".
- * - Traite chaque sous-répertoire email.
- */
 async function main() {
-  // Le répertoire "card" doit être passé en argument (ex: node indexMails.js card)
-/*
-  const rootDirectory = process.argv[2];
-  if (!rootDirectory) {
-    console.error("Usage : node indexMails.js <répertoire_card>");
-    process.exit(1);
-  }
-*/
-    const rootDirectory = process.env.FILES
+
+  //await sumCards ({email:"yves-marie.pondaven@docaposte.fr"})
+
+  //process.exit(1)
+
+  const rootDirectory = process.env.FILES
 
   const mailsDir = path.join(rootDirectory, "mails");
   const vectorsDir = path.join(rootDirectory, "vectors");
 
-  // Vérifier l'existence du répertoire "mails"
   if (!fs.existsSync(mailsDir)) {
     console.error(`Le répertoire "mails" n'existe pas dans ${rootDirectory}`);
     process.exit(1);
   }
 
-  // Créer le répertoire "vectors" s'il n'existe pas
   if (!fs.existsSync(vectorsDir)) {
     fs.mkdirSync(vectorsDir, { recursive: true });
   }
@@ -167,6 +175,93 @@ async function main() {
   }
 
   console.log("\nTraitement terminé.");
+}
+
+
+
+export async function extractText(context, filepath) {
+  try {
+    console.log("EXTRACT", process.env.TEXTEXTRACT_APIKEY);
+    
+    // Création de l'instance form-data
+    const form = new FormData();
+    const filename = filepath;
+
+    console.log("bf create stream", filepath, path.basename(filename));
+    form.append('file', fs.createReadStream(filepath), path.basename(filename));
+    console.log("after create stream", filename);
+
+    // Construction des en-têtes en récupérant ceux générés par form-data
+    const headers = {
+      'key': process.env.TEXTEXTRACT_APIKEY,
+      'model': 'NO',
+      ...form.getHeaders()
+    };
+
+    const response = await axios.post(process.env.TEXTEXTRACT_URL, form, {
+      headers,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 920000 
+    });
+    
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    if (error.response) {
+      throw new Error(`Erreur ${error.response.status}: ${error.response.data}`);
+    }
+    throw new Error(`Erreur de connexion: ${error.message}`);
+  }
+}
+
+
+
+export async function sumCards (context) {
+  const dir = path.join (process.env.FILES,"mails")
+  const emailDirs = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => dirent.name);
+  for (const emailDirName of emailDirs) {
+    await sumCard (context,emailDirName, path.join(dir,emailDirName))
+  }
+}
+
+
+export async function sumCard (context, card, cardDir) {
+  let docs = []
+  const files = await fs.promises.readdir(cardDir);
+  for (const file of files) {
+    let filepath = path.join(cardDir, file)
+    console.log ("TRY INDEXING FILE",filepath )
+    console.log (path.extname(file))  
+    if (path.extname(file)==".pdf") {
+      console.log ("EXTRACT FILE ",filepath)
+      const text = await extractText(context, filepath);
+      console.log ("****************")
+      console.log (text.text)
+      docs.push (new Document({
+        pageContent: text,
+        metadata: { source: file }
+      }))
+    }
+    
+  }
+  console.log ("^^^^^^^^^^")
+  console.log (docs)
+  console.log ("^^^^^^^^^^")
+  const prompt = "transforme de contenu en biographie avec les expériences, les ecoles, les compétences, les hobby ... "
+  const chain = loadQAMapReduceChain(llm);
+  const res = await chain.invoke({
+    input_documents: docs,
+    question: prompt,
+  });
+
+  console.log (res.text)
+  fs.writeFileSync(path.join(process.env.FILES, "sum", card+".txt"), res.text, 'utf-8');
+
 }
 
 main();

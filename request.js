@@ -5,7 +5,7 @@ import { SystemMessagePromptTemplate, HumanMessagePromptTemplate, AIMessagePromp
 import { RunnableSequence, RunnablePassthrough, RunnableMap } from "@langchain/core/runnables";
 import { formatDocumentsAsString } from "langchain/util/document";
 import * as path from "path";
-import { existsSync } from 'fs';
+import { existsSync , readFileSync} from 'fs';
 import { AzureChatOpenAI } from "@langchain/openai";
 import { AzureOpenAIEmbeddings } from "@langchain/openai";
 import { createClient } from "redis";
@@ -35,7 +35,14 @@ let embeddings = new AzureOpenAIEmbeddings({
   maxConcurrency: 50,
 });
 
-const SYSTEM_TEMPLATE = `Tu es l'avatar de la personne indiquée. Tu as accès aux documents décrivant cette personne et les offres commerciales qu'elle porte. Tu fais des réponses en son nom. Donc tu réponds "je suis né ..." comme si tu étais cette personne. Ne réponds qu'avec les informations de ton contexte. Utilisez les informations suivantes pour répondre à la question ci-dessous. Si vous ne connaissez pas la réponse, indiquez-le clairement. Dans votre réponse, incluez les sources et les éléments pour aider l'utilisateur à les retrouver, comme le numéro de page et le nom du document. Structurez votre réponse de manière claire et logique.
+const SYSTEM_TEMPLATE = `Tu es l'avatar de la personne indiquée.
+ Tu as accès aux documents décrivant cette personne et les offres commerciales qu'elle porte. 
+ Tu fais des réponses en son nom. Donc tu réponds "je suis né ..." comme si tu étais cette personne. 
+ Ne réponds qu'avec les informations de ton contexte. Utilisez les informations suivantes pour répondre à la question ci-dessous. 
+ Si vous ne connaissez pas la réponse, indiquez-le clairement. 
+ Il faut etre poli mais dans une conversation donc on dit bonjour au debut et au revoir a la fin mais pas a la fin de chaque réponse.ne dit aurevoir ou a bientot que si l'utilisateur te dit aurevoir. 
+  tu ne dis pas au revoir tant que l'on ne te dit pas aurevoir. L'utilisateur peut te reposer une question, ca serait impoli. 
+  Quand on te dit bonjour sans question tu peux proposer que voulez vous avoir sur moi ou sur les offres docaposte.
 ----------------
 {context}
 ----------------
@@ -73,8 +80,10 @@ export async function question(context, card, question) {
     const raw_history = await redisClient.get(sessionId);
     const history = raw_history ? JSON.parse(raw_history) : [];
 
+
+    const cv = readFileSync(path.join(process.env.FILES, "mails", card, "prompt.txt"), 'utf-8');
     const messages = [
-      SystemMessagePromptTemplate.fromTemplate(SYSTEM_TEMPLATE + " \ntu es l'avatar de : " + card),
+      SystemMessagePromptTemplate.fromTemplate(SYSTEM_TEMPLATE + " \ntu es l'avatar de : " + card + "et voici son CV :  "+ cv + "\n\n utilise ne priorité ces informations pour repondre aux questions sur " + card ),
       HumanMessagePromptTemplate.fromTemplate("{question}"),
     ];
 
@@ -115,6 +124,8 @@ export async function question(context, card, question) {
 
 async function main() {
   await redisClient.connect();
+  //console.log ("qestion")
+  //console.log (await question({"email":"yves-marie.pondaven@docaposte.fr",sessionId:'80'}, "yves-marie.pondaven@docaposte.fr", "tu as travaillé pour qtées ?ell soctées ?"))
 }
 
 main();
