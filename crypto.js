@@ -98,7 +98,7 @@ async function main () {
               if (stats.isDirectory()) {
                 const email = file;
                 const encryptedEmail = encryptEmail(email, key, iv);
-                console.log(`Email: ${email} anf encrpyred ${encryptedEmail}`);
+                console.log(`Email: ${email} anf encrpyred ${encodeURIComponent(encryptedEmail)}`);
             
               }
             });
