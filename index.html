@@ -53,15 +53,15 @@
         return response.json();
       })
       .then(config => {
-        const userInfo = document.getElementById('user-info');
-        userInfo.innerHTML = `
-          <img src="${config.picture}" alt="Photo de ${config.name}" width="100px"/>
-          <div class="info-text">
-            <h2>${config.name}</h2>
-            <div class="message bot-message">${config.invite}</div>
-          </div>
-        `;
-      });
+            const userInfo = document.getElementById('user-info');
+            userInfo.innerHTML = `
+                <div class="user-header">
+                <img src="${config.picture}" alt="Photo de ${config.name}" />
+                <h2>${config.name}</h2>
+                </div>
+                <div class="message bot-message">${config.invite}</div>
+            `;
+        });
 
       const chatLog = document.getElementById('chat-log');
       const messageInput = document.getElementById('message-input');

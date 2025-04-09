@@ -1,4 +1,9 @@
-body {
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Réinitialisation du padding pour tenir compte des safe area insets sur iOS */
+  body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -6,13 +11,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* On n'utilise plus 100vh ici, la hauteur du conteneur sera définie dynamiquement via JS */
     min-height: 100vh;
   }
-  
-  /* Conteneur principal (chat) en pleine hauteur */
+
+  /* Conteneur principal (chat) dont la hauteur est gérée via JavaScript */
   #chat-container {
     width: 95%;
     max-width: 600px;
+    /* La hauteur sera définie en JS, par défaut on peut indiquer 100vh */
     height: 100vh;
     background: #fff;
     border: 1px solid #ddd;
@@ -22,7 +29,7 @@ body {
     position: relative;
     overflow: hidden;
   }
-  
+
   /* Historique de conversation avec espace en bas pour l'input */
   #chat-log {
     flex: 1;
@@ -30,26 +37,26 @@ body {
     padding: 10px;
     padding-bottom: 100px; /* espace réservé au bas pour l'input */
   }
-  
+
   .message {
     margin: 5px 0;
     padding: 8px;
     border-radius: 10px;
     word-wrap: break-word;
   }
-  
+
   .user-message {
     background: #0000FF;
     color: white;
     align-self: flex-end;
   }
-  
+
   .bot-message {
     background: #fff;
     align-self: flex-start;
     border: 1px solid #ddd;
   }
-  
+
   /* Zone d'entrée fixée en bas */
   #input-container {
     position: absolute;
@@ -65,7 +72,7 @@ body {
     /* Ajout d'une ombre légère pour le séparer du contenu */
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
-  
+
   #message-input {
     flex: 1;
     padding: 15px;
@@ -73,7 +80,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 8px;
   }
-  
+
   #send-btn, #voice-btn, #stop-btn {
     padding: 15px;
     font-size: 1em;
@@ -84,16 +91,16 @@ body {
     cursor: pointer;
     min-width: 50px;
   }
-  
+
   #send-btn:hover, #voice-btn:hover, #stop-btn:hover {
     background: #0000EE;
   }
-  
+
   /* Bouton Stop Lecture initialement caché */
   #stop-btn {
     display: none;
   }
-  
+
   /* CSS pour l'animation du spinner */
   .spinner {
     display: flex;
@@ -129,11 +136,37 @@ body {
       opacity: 0.7;
     }
   }
-  
+
   /* Ajustement sur très petits écrans (ex. iPhone SE) */
   @media (max-width: 400px) {
     #message-input, #send-btn, #voice-btn, #stop-btn {
       padding: 12px;
       font-size: 0.9em;
     }
+  }
+
+  #user-info {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* Mise en forme du header (image et nom) */
+  .user-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px; /* Sépare le header de la bulle d'invite */
+  }
+  
+  .user-header img {
+    border-radius: 50%;
+    width: 50px;    /* Ajustez la taille si nécessaire */
+    height: 50px;   /* Pour un aspect carré */
+    object-fit: cover;
+  }
+  
+  .user-header h2 {
+    margin: 0;
+    font-size: 1.2em;
   }
