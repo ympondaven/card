@@ -18,7 +18,31 @@
       <button id="stop-btn">Arrêter Lecture</button>
     </div>
   </div>
+    <script>
+        const speakWhenReady = (text) => {
+  const synth = window.speechSynthesis;
+  const speak = () => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 1.1;
+    utterance.pitch = 1.1;
+    utterance.voice = synth.getVoices().find(v => v.lang === 'fr-FR');
+    utterance.onend = () => {
+      stopBtn.style.display = 'none';
+    };
+    stopBtn.style.display = 'inline-block';
+    synth.speak(utterance);
+  };
 
+  if (synth.getVoices().length > 0) {
+    speak();
+  } else {
+    synth.addEventListener('voiceschanged', () => {
+      speak();
+    }, { once: true });
+  }
+};
+    </script>
   <!-- Chargement de la librairie Marked pour le rendu Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
@@ -153,19 +177,11 @@
           typeWriterMessage(markdownResponse, 'bot-message', () => {
             // Si la requête provient de la saisie vocale, lance la lecture audio
             if (isVoiceInput) {
-              const cleanText = markdownResponse
-                                  .replace(/https?:\/\/\S+/g, '')
-                                  .replace(/\*/g, '');
-              const utterance = new SpeechSynthesisUtterance(cleanText);
-              utterance.lang = 'fr-FR';
-              utterance.rate = 1.1;
-              utterance.pitch = 1.1;
-              // Masque le bouton Stop à la fin de la lecture
-              utterance.onend = () => {
-                stopBtn.style.display = 'none';
-              };
-              stopBtn.style.display = 'inline-block';
-              speechSynthesis.speak(utterance);
+                const cleanText = markdownResponse
+                    .replace(/https?:\/\/\S+/g, '')
+                    .replace(/\*/g, '');
+                speakWhenReady(cleanText);
+
             }
           });
         } catch (error) {
@@ -259,6 +275,11 @@
         voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
       }
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        window.speechSynthesis.getVoices();
+    });
+
   </script>
 </body>
 </html>
