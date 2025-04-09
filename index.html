@@ -5,17 +5,24 @@
   <title>Chat API Front</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* Styles généraux */
+    /* Appliquer le box-sizing à tous les éléments */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* Réinitialisation du padding pour tenir compte des safe area insets sur iOS */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       background: #f9f9f9;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: -webkit-fill-available;
     }
+
+    /* Container principal du chat */
     #chat-container {
       width: 90%;
       max-width: 600px;
@@ -24,39 +31,96 @@
       border-radius: 5px;
       display: flex;
       flex-direction: column;
-      height: 80vh;
+      /* La hauteur est ajustée pour tenir compte des safe area insets et d'une marge (20px) */
+      height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
       padding: 15px;
+      margin: 10px;
     }
+
+    /* Conteneur de l'historique de discussion */
     #chat-log {
       flex: 1;
       overflow-y: auto;
       margin-bottom: 10px;
     }
+
     .message {
       margin: 5px 0;
       padding: 8px;
       border-radius: 10px;
+      word-wrap: break-word;
     }
+
     .user-message {
       background: #0000FF;
       color: white;
       align-self: flex-end;
     }
+
     .bot-message {
-      background: white;
+      background: #fff;
       align-self: flex-start;
+      border: 1px solid #ddd;
     }
+
+    /* Mise en forme des contenus Markdown pour les messages du bot */
+    .bot-message p {
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+
+    .bot-message pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+
+    .bot-message code {
+      background: #f4f4f4;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .bot-message blockquote {
+      margin: 10px 0;
+      padding: 10px 20px;
+      background: #f4f4f4;
+      border-left: 5px solid #ccc;
+    }
+
+    .bot-message ul,
+    .bot-message ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+
+    .bot-message h1,
+    .bot-message h2,
+    .bot-message h3,
+    .bot-message h4,
+    .bot-message h5,
+    .bot-message h6 {
+      margin: 15px 0 10px;
+    }
+
+    /* Container d'entrée */
     #input-container {
       display: flex;
       align-items: center;
     }
+
     #message-input {
       flex: 1;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    #send-btn, #voice-btn, #stop-btn {
+
+    #send-btn, 
+    #voice-btn, 
+    #stop-btn {
       padding: 10px;
       margin-left: 5px;
       border: none;
@@ -65,13 +129,18 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    #send-btn:hover, #voice-btn:hover, #stop-btn:hover {
+
+    #send-btn:hover, 
+    #voice-btn:hover, 
+    #stop-btn:hover {
       background: #0000FF;
     }
+
     /* Bouton Stop Lecture initialement caché */
     #stop-btn {
       display: none;
     }
+
     /* Style pour le spinner de chargement */
     .spinner {
       display: flex;
@@ -79,6 +148,7 @@
       align-items: center;
       margin: 10px 0;
     }
+
     .spinner .dot {
       width: 10px;
       height: 10px;
@@ -87,12 +157,15 @@
       margin: 0 5px;
       animation: dotPulse 1s infinite;
     }
+
     .spinner .dot:nth-child(2) {
       animation-delay: 0.2s;
     }
+
     .spinner .dot:nth-child(3) {
       animation-delay: 0.4s;
     }
+
     @keyframes dotPulse {
       0% {
         transform: scale(1);
@@ -105,6 +178,24 @@
       100% {
         transform: scale(1);
         opacity: 0.7;
+      }
+    }
+
+    /* Media query pour améliorer la lisibilité sur petits écrans */
+    @media (max-width: 600px) {
+      #chat-container {
+        padding: 10px;
+      }
+
+      #message-input {
+        padding: 8px;
+      }
+
+      #send-btn, 
+      #voice-btn, 
+      #stop-btn {
+        padding: 8px;
+        font-size: 0.9em;
       }
     }
   </style>
@@ -126,9 +217,15 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Configure Marked pour activer certaines options (ex: sauts de ligne automatique)
+      marked.setOptions({
+        breaks: true,
+        gfm: true
+      });
+
       // Variable pour déterminer si la question a été posée par la reconnaissance vocale
       let isVoiceInput = false;
-      // Variable pour éviter les envois multiples lors de la reconnaissance vocale sur Safari
+      // Variable pour éviter les envois multiples lors de la reconnaissance vocale sur Safari.
       let voiceSubmitted = false;
       
       // Génère un identifiant de session unique et constant durant la conversation
@@ -166,20 +263,49 @@
       const voiceBtn = document.getElementById('voice-btn');
       const stopBtn = document.getElementById('stop-btn');
 
-      // Arrête la synthèse vocale lorsqu'on clique sur le bouton Stop
-      stopBtn.addEventListener('click', () => {
-        speechSynthesis.cancel();
-        stopBtn.style.display = 'none';
-      });
+      // Fonction de défilement vers le bas avec un léger délai pour permettre le rendu DOM
+      const scrollToBottom = () => {
+        setTimeout(() => {
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }, 50);
+      };
 
-      // Fonction pour ajouter un message dans le chat
+      // Fonction d'ajout d'un message classique (utilisée pour les messages utilisateurs et erreurs)
       const appendMessage = (message, className) => {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message ' + className;
         msgDiv.innerHTML = message;
         chatLog.appendChild(msgDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
+        scrollToBottom();
       };
+
+      // Fonction d'affichage progressif avec rendu Markdown à chaque incrément
+      const typeWriterMessage = (text, className, callback) => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + className;
+        chatLog.appendChild(msgDiv);
+        scrollToBottom();
+        let i = 0;
+        const speed = 30; // Vitesse d'affichage en ms par caractère
+        const timer = setInterval(() => {
+          if (i < text.length) {
+            i++;
+            // Récupère la sous-chaîne actuelle et la parse avec Marked
+            const currentMarkdown = text.substring(0, i);
+            msgDiv.innerHTML = marked.parse(currentMarkdown);
+            scrollToBottom();
+          } else {
+            clearInterval(timer);
+            if (callback) callback();
+          }
+        }, speed);
+      };
+
+      // Arrête la synthèse vocale lorsqu'on clique sur le bouton Stop
+      stopBtn.addEventListener('click', () => {
+        speechSynthesis.cancel();
+        stopBtn.style.display = 'none';
+      });
 
       // Fonction pour appeler l'API et afficher une animation durant l'attente
       const callAPI = async (prompt) => {
@@ -191,7 +317,7 @@
           loadingSpinner.className = 'spinner';
           loadingSpinner.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
           chatLog.appendChild(loadingSpinner);
-          chatLog.scrollTop = chatLog.scrollHeight;
+          scrollToBottom();
           
           // Appel à l'API
           const response = await fetch(`/cards/prompt/?email=${encodeURIComponent(email)}`, {
@@ -216,27 +342,26 @@
             return;
           }
           const markdownResponse = await response.text();
-          // Convertit le markdown en HTML pour l'affichage
-          const htmlResponse = marked.parse(markdownResponse);
-          appendMessage(htmlResponse, 'bot-message');
-          
-          // Si la question a été posée par speech-to-text, on lance la synthèse vocale
-          if (isVoiceInput) {
-            const cleanText = markdownResponse
-                                .replace(/https?:\/\/\S+/g, '')
-                                .replace(/\*/g, '');
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.lang = 'fr-FR';
-            utterance.rate = 1.1;
-            utterance.pitch = 1.1;
-            // Lorsque la lecture se termine, on masque le bouton Stop
-            utterance.onend = () => {
-              stopBtn.style.display = 'none';
-            };
-            // Affiche le bouton Stop et démarre la lecture
-            stopBtn.style.display = 'inline-block';
-            speechSynthesis.speak(utterance);
-          }
+
+          // Affiche le message progressivement avec rendu Markdown à chaque incrément
+          typeWriterMessage(markdownResponse, 'bot-message', () => {
+            // Si la requête provient de la saisie vocale, lance la lecture audio
+            if (isVoiceInput) {
+              const cleanText = markdownResponse
+                                  .replace(/https?:\/\/\S+/g, '')
+                                  .replace(/\*/g, '');
+              const utterance = new SpeechSynthesisUtterance(cleanText);
+              utterance.lang = 'fr-FR';
+              utterance.rate = 1.1;
+              utterance.pitch = 1.1;
+              // Masque le bouton Stop à la fin de la lecture
+              utterance.onend = () => {
+                stopBtn.style.display = 'none';
+              };
+              stopBtn.style.display = 'inline-block';
+              speechSynthesis.speak(utterance);
+            }
+          });
         } catch (error) {
           const spinnerElem = document.querySelector('.spinner');
           if (spinnerElem) spinnerElem.remove();
@@ -246,7 +371,6 @@
 
       // Envoie du message lors du clic sur le bouton "Envoyer"
       sendBtn.addEventListener('click', () => {
-        // Pour une question tapée, on ne fait pas de TTS
         isVoiceInput = false;
         const prompt = messageInput.value.trim();
         if (prompt) {
@@ -267,15 +391,14 @@
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.lang = 'fr-FR';
-        recognition.interimResults = true; // Pour récupérer les résultats intermédiaires
-        recognition.continuous = true;     // On gère nous-même la fin grâce à un timer
+        recognition.interimResults = true;
+        recognition.continuous = true;
         recognition.maxAlternatives = 1;
         
         let recordingTranscript = '';
         let silenceTimer = null;
         
         recognition.onstart = () => {
-          // Change la couleur du bouton pendant l'enregistrement
           voiceBtn.style.background = 'red';
           recordingTranscript = '';
           messageInput.value = '';
@@ -292,13 +415,11 @@
           }
           messageInput.value = recordingTranscript + interimTranscript;
           
-          // Réinitialise le timer à chaque nouveau résultat
           if (silenceTimer) clearTimeout(silenceTimer);
           silenceTimer = setTimeout(() => {
             const finalText = messageInput.value.trim();
             if (!voiceSubmitted && finalText !== '') {
               voiceSubmitted = true;
-              // Pour une question issue de la reconnaissance vocale, on active le TTS
               isVoiceInput = true;
               callAPI(finalText);
               messageInput.value = '';
@@ -318,7 +439,6 @@
         };
         
         voiceBtn.addEventListener('click', () => {
-          // Pour iOS, initialiser le synthétiseur vocal via une interaction utilisateur
           if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
             const dummy = new SpeechSynthesisUtterance('');
             speechSynthesis.speak(dummy);
