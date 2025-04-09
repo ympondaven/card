@@ -60,7 +60,7 @@
   /* Zone d'entrée fixée en bas */
   #input-container {
     position: absolute;
-    bottom: 0;
+    bottom: env(safe-area-inset-bottom, 0); /* Ajout de la safe area */
     left: 0;
     right: 0;
     padding: 10px;
@@ -69,7 +69,6 @@
     align-items: center;
     gap: 5px;
     border-top: 1px solid #ddd;
-    /* Ajout d'une ombre légère pour le séparer du contenu */
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
 
