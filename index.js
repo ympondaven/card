@@ -75,6 +75,10 @@ app.get('/cards/chat', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/cards/chat/index.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.css'));
+});
+
 // Gestion de toutes les autres routes non définies
 app.use((req, res) => {
   console.log(`URL non définie appelée : ${req.originalUrl}`);
