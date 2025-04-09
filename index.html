@@ -20,7 +20,7 @@
   </div>
   
   <script>
-    // La fonction speakWhenReady récupère maintenant l'élément stopBtn dans son scope
+    // La fonction speakWhenReady récupère l'élément stopBtn dans son scope
     const speakWhenReady = (text) => {
       const synth = window.speechSynthesis;
       const stopBtn = document.getElementById('stop-btn'); // Récupération de l'élément ici
@@ -47,10 +47,10 @@
       }
     };
   </script>
-
+  
   <!-- Chargement de la librairie Marked pour le rendu Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+  
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // Configure Marked pour activer certaines options (ex: sauts de ligne automatique)
@@ -59,13 +59,15 @@
         gfm: true
       });
 
+      // Variable pour déterminer si la question a été posée par la reconnaissance vocale
       let isVoiceInput = false;
+      // Variable pour éviter les envois multiples lors de la reconnaissance vocale sur Safari.
       let voiceSubmitted = false;
       
-      // Génère un identifiant de session unique durant la conversation
+      // Génère un identifiant de session unique et constant durant la conversation
       const sessionId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).substring(2);
       
-      // Récupère le paramètre "email" depuis l'URL
+      // Récupère le paramètre "email" depuis l'URL (ex: /cards/chat?email=exemple@mail.com)
       const urlParams = new URLSearchParams(window.location.search);
       const email = urlParams.get('email');
       if (!email) {
@@ -74,22 +76,22 @@
       }
       
       fetch(`/cards/config?email=${encodeURIComponent(email)}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération de la configuration");
-        }
-        return response.json();
-      })
-      .then(config => {
-        const userInfo = document.getElementById('user-info');
-        userInfo.innerHTML = `
-          <div class="user-header">
-            <img src="${config.picture}" alt="Photo de ${config.name}" />
-            <h2>${config.name}</h2>
-          </div>
-          <div class="message bot-message">${config.invite}</div>
-        `;
-      });
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Erreur lors de la récupération de la configuration");
+          }
+          return response.json();
+        })
+        .then(config => {
+          const userInfo = document.getElementById('user-info');
+          userInfo.innerHTML = `
+            <div class="user-header">
+              <img src="${config.picture}" alt="Photo de ${config.name}" />
+              <h2>${config.name}</h2>
+            </div>
+            <div class="message bot-message">${config.invite}</div>
+          `;
+        });
 
       const chatLog = document.getElementById('chat-log');
       const messageInput = document.getElementById('message-input');
@@ -124,6 +126,7 @@
         const timer = setInterval(() => {
           if (i < text.length) {
             i++;
+            // Récupère la sous-chaîne actuelle et la parse avec Marked
             const currentMarkdown = text.substring(0, i);
             msgDiv.innerHTML = marked.parse(currentMarkdown);
             scrollToBottom();
@@ -134,7 +137,7 @@
         }, speed);
       };
 
-      // Arrête la synthèse vocale lors du clic sur le bouton Stop
+      // Arrête la synthèse vocale lorsqu'on clique sur le bouton Stop
       stopBtn.addEventListener('click', () => {
         speechSynthesis.cancel();
         stopBtn.style.display = 'none';
@@ -143,13 +146,16 @@
       // Fonction pour appeler l'API et afficher une animation durant l'attente
       const callAPI = async (prompt) => {
         try {
+          // Ajoute le message de l'utilisateur
           appendMessage(prompt, 'user-message');
+          // Ajoute le spinner indiquant le chargement
           const loadingSpinner = document.createElement('div');
           loadingSpinner.className = 'spinner';
           loadingSpinner.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
           chatLog.appendChild(loadingSpinner);
           scrollToBottom();
           
+          // Appel à l'API
           const response = await fetch(`/cards/prompt/?email=${encodeURIComponent(email)}`, {
             method: 'POST',
             headers: {
@@ -162,6 +168,7 @@
             })
           });
           
+          // Supprime le spinner après réception de la réponse
           chatLog.removeChild(loadingSpinner);
 
           if (!response.ok) {
@@ -172,14 +179,16 @@
           
           const markdownResponse = await response.text();
 
-          typeWriterMessage(markdownResponse, 'bot-message', () => {
-            if (isVoiceInput) {
-              const cleanText = markdownResponse
-                .replace(/https?:\/\/\S+/g, '')
-                .replace(/\*/g, '');
-              speakWhenReady(cleanText);
-            }
-          });
+          // Demarre immédiatement la lecture TTS si le prompt provient de la reconnaissance vocale
+          if (isVoiceInput) {
+            const cleanText = markdownResponse
+              .replace(/https?:\/\/\S+/g, '')
+              .replace(/\*/g, '');
+            speakWhenReady(cleanText);
+          }
+          
+          // Affiche le message progressivement avec rendu Markdown à chaque incrément
+          typeWriterMessage(markdownResponse, 'bot-message');
         } catch (error) {
           const spinnerElem = document.querySelector('.spinner');
           if (spinnerElem) spinnerElem.remove();
