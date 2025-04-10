@@ -258,23 +258,7 @@
       window.speechSynthesis.getVoices();
     });
 
-    function adjustChatHeight() {
-      const chatContainer = document.getElementById('chat-container');
-      if (chatContainer) {
-        chatContainer.style.height = `${window.innerHeight - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)}px`;
-      }
-    }
 
-    function adjustButtonPosition() {
-      const inputContainer = document.getElementById('input-container');
-      const urlBarHeight = window.innerHeight - document.documentElement.clientHeight;
-      inputContainer.style.bottom = `${urlBarHeight + 20}px`; /* Ajout d'un espace supplémentaire */
-    }
-
-    window.addEventListener('load', adjustButtonPosition);
-    window.addEventListener('resize', adjustButtonPosition);
-    adjustChatHeight(); // Appel initial pour ajuster la hauteur au chargement
-    adjustButtonPosition();
   </script>
 </body>
 </html>

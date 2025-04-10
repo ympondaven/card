@@ -1,169 +1,186 @@
-*, *::before, *::after {
-    box-sizing: border-box;
+/*
+  1) On retire ici toute règle ou partie JS cherchant à ajuster la hauteur
+     en dur (style.bottom = X px).
+  2) On utilise position: fixed ou sticky + bottom: 0 pour #input-container.
+*/
+
+/* Réinitialisation globale */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  /* Tenir compte du safe area iOS */
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #f9f9f9;
+}
+
+/* --- Conteneur Principal --- */
+#chat-container {
+  /* On peut le fixer à l’écran pour forcer l’occupation entière */
+  position: fixed;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  right: 0;
+  bottom: 0; /* prend tout l’écran */
+  margin: 0 auto;
+  width: 100%;
+  max-width: 600px;
+
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+/* --- Zone d’affichage des messages --- */
+#chat-log {
+  flex: 1;               /* prend tout l’espace vertical restant */
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* --- Zone d'information sur l'utilisateur --- */
+#user-info {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* --- Contenu du header (photo + nom) --- */
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.user-header img {
+  border-radius: 50%;
+  width: 50px; 
+  height: 50px;
+  object-fit: cover;
+}
+
+.user-header h2 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+/* --- Zone de saisie en bas --- */
+#input-container {
+  /* Positionnement sticky ou fixed (les deux peuvent fonctionner),
+     ici on montre sticky */
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Styles du champ de saisie et des boutons */
+#message-input {
+  flex: 1;
+  padding: 15px;
+  font-size: 1.1em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+#send-btn, #voice-btn, #stop-btn, #stop-speech-btn {
+  padding: 15px;
+  font-size: 1em;
+  border: none;
+  background: #0000FF;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 50px;
+}
+
+#send-btn:hover, #voice-btn:hover, #stop-btn:hover, #stop-speech-btn:hover {
+  background: #0000EE;
+}
+
+/* Par défaut on masque le bouton Arrêter Lecture */
+#stop-btn {
+  display: none;
+}
+
+/* --- Messages utilisateur / bot --- */
+.message {
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 10px;
+  word-wrap: break-word;
+}
+
+.user-message {
+  background: #0000FF;
+  color: white;
+  align-self: flex-end;
+}
+
+.bot-message {
+  background: #fff;
+  align-self: flex-start;
+  border: 1px solid #ddd;
+}
+
+/* Petit spinner pour chargement */
+.spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+}
+.spinner .dot {
+  width: 10px;
+  height: 10px;
+  background: #0000FF;
+  border-radius: 50%;
+  margin: 0 5px;
+  animation: dotPulse 1s infinite;
+}
+.spinner .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.spinner .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dotPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
   }
-  
-  /* Réinitialisation du padding pour tenir compte des safe area insets sur iOS */
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: #f9f9f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
   }
-  
-  /* Conteneur principal (chat) dont la hauteur est gérée via JavaScript */
-  #chat-container {
-    width: 95%;
-    max-width: 600px;
-    height: 100vh;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: hidden;
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
   }
-  
-  /* Historique de conversation avec espace en bas pour l'input */
-  #chat-log {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0)); /* espace réservé au bas pour l'input */
+}
+
+/* Meilleure lisibilité sur petits écrans (iPhone SE, etc.) */
+@media (max-width: 400px) {
+  #message-input, #send-btn, #voice-btn, #stop-btn, #stop-speech-btn {
+    padding: 12px;
+    font-size: 0.9em;
   }
-  
-  .message {
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 10px;
-    word-wrap: break-word;
-  }
-  
-  .user-message {
-    background: #0000FF;
-    color: white;
-    align-self: flex-end;
-  }
-  
-  .bot-message {
-    background: #fff;
-    align-self: flex-start;
-    border: 1px solid #ddd;
-  }
-  
-  /* Zone d'entrée fixée en bas */
-  #input-container {
-    position: absolute;
-    bottom: calc(env(safe-area-inset-bottom, 0) + 20px); /* Ajout de la safe area et un espace supplémentaire */
-    left: 0;
-    right: 0;
-    padding: 10px;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    border-top: 1px solid #ddd;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  #message-input {
-    flex: 1;
-    padding: 15px;
-    font-size: 1.1em;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
-  
-  #send-btn, #voice-btn, #stop-btn {
-    padding: 15px;
-    font-size: 1em;
-    border: none;
-    background: #0000FF;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    min-width: 50px;
-  }
-  
-  #send-btn:hover, #voice-btn:hover, #stop-btn:hover {
-    background: #0000EE;
-  }
-  
-  /* Bouton Stop Lecture initialement caché */
-  #stop-btn {
-    display: none;
-  }
-  
-  /* CSS pour l'animation du spinner */
-  .spinner {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 10px 0;
-  }
-  .spinner .dot {
-    width: 10px;
-    height: 10px;
-    background: #0000FF;
-    border-radius: 50%;
-    margin: 0 5px;
-    animation: dotPulse 1s infinite;
-  }
-  .spinner .dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-  .spinner .dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-  @keyframes dotPulse {
-    0% {
-      transform: scale(1);
-      opacity: 0.7;
-    }
-    50% {
-      transform: scale(1.5);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 0.7;
-    }
-  }
-  
-  /* Ajustement sur très petits écrans (ex. iPhone SE) */
-  @media (max-width: 400px) {
-    #message-input, #send-btn, #voice-btn, #stop-btn {
-      padding: 12px;
-      font-size: 0.9em;
-    }
-  }
-  
-  #user-info {
-    padding: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  /* Mise en forme du header (image et nom) */
-  .user-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px; /* Sépare le header de la bulle d'invite */
-  }
-  
-  .user-header img {
-    border-radius: 50%;
-    width: 50px;    /* Ajustez la taille si nécessaire */
-    height: 50px;   /* Pour un aspect carré */
-    object-fit: cover;
-  }
-  
-  .user-header h2 {
-    margin: 0;
-    font-size: 1.2em;
-  }
+}
