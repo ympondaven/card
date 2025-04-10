@@ -319,5 +319,18 @@ efefefefefeffeeffeeffeef
       window.speechSynthesis.getVoices();
     });
   </script>
+  <script>
+    function adjustChatHeight() {
+      const chatContainer = document.getElementById('chat-container');
+      if (chatContainer) {
+        chatContainer.style.height = `${window.innerHeight}px`;
+      }
+    }
+    
+    // Ajustement au chargement
+    window.addEventListener('load', adjustChatHeight);
+    // Et quand on redimensionne (utile si la barre du navigateur disparaît)
+    window.addEventListener('resize', adjustChatHeight);
+    </script>
 </body>
 </html>
