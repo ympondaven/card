@@ -261,11 +261,12 @@
     function adjustChatHeight() {
       const chatContainer = document.getElementById('chat-container');
       if (chatContainer) {
-        chatContainer.style.height = `${window.innerHeight}px`;
+        chatContainer.style.height = `${window.innerHeight - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)}px`;
       }
     }
     window.addEventListener('load', adjustChatHeight);
     window.addEventListener('resize', adjustChatHeight);
+    adjustChatHeight(); // Appel initial pour ajuster la hauteur au chargement
   </script>
 </body>
 </html>

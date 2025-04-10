@@ -35,7 +35,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 10px;
-    padding-bottom: 100px; /* espace réservé au bas pour l'input */
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0)); /* espace réservé au bas pour l'input */
   }
 
   .message {
