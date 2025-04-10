@@ -5,35 +5,39 @@
   <title>Chat API Front</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="stylesheet" href="./index.css">
+  <style>
+    #stop-speech-btn, #stop-btn {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div id="chat-container">
     <div id="user-info"></div>
     <div id="chat-log"></div>
-    
-efefefefefeffeeffeeffeef
+
     <button onclick="speakText()">Parler</button>
     <script>
-    function speakText() {
+      function speakText() {
         const utterance = new SpeechSynthesisUtterance("Bonjour, comment ça va ?");
         utterance.lang = "fr-FR";
         speechSynthesis.speak(utterance);
-    }
+      }
     </script>
 
     <div id="input-container">
       <input type="text" id="message-input" placeholder="Tapez votre question ici..." />
       <button id="voice-btn">🎤</button>
       <button id="send-btn">Envoyer</button>
+      <button id="stop-speech-btn">Arrêter Écoute</button>
       <button id="stop-btn">Arrêter Lecture</button>
     </div>
   </div>
-  
+
   <script>
-    // La fonction speakWhenReady récupère l'élément stopBtn dans son scope
     const speakWhenReady = (text) => {
       const synth = window.speechSynthesis;
-      const stopBtn = document.getElementById('stop-btn'); // Récupération de l'élément ici
+      const stopBtn = document.getElementById('stop-btn');
 
       const speak = () => {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -51,50 +55,33 @@ efefefefefeffeeffeeffeef
       if (synth.getVoices().length > 0) {
         speak();
       } else {
-        synth.addEventListener('voiceschanged', () => {
-          speak();
-        }, { once: true });
+        synth.addEventListener('voiceschanged', speak, { once: true });
       }
     };
   </script>
-  
-  <!-- Chargement de la librairie Marked pour le rendu Markdown -->
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Configure Marked pour activer certaines options (ex: sauts de ligne automatique)
-      marked.setOptions({
-        breaks: true,
-        gfm: true
-      });
-
-      // Variable pour déterminer si la question a été posée par la reconnaissance vocale
+      marked.setOptions({ breaks: true, gfm: true });
       let isVoiceInput = false;
-      // Variable pour éviter les envois multiples lors de la reconnaissance vocale sur Safari.
       let voiceSubmitted = false;
-      
-      // Génère un identifiant de session unique et constant durant la conversation
       const sessionId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-      
-      // Récupère le paramètre "email" depuis l'URL (ex: /cards/chat?email=exemple@mail.com)
       const urlParams = new URLSearchParams(window.location.search);
       const email = urlParams.get('email');
       if (!email) {
         alert("Le paramètre 'email' est requis dans l'URL. Exemple : /cards/chat?email=exemple@mail.com");
         return;
       }
-      
+
       fetch(`/cards/config?email=${encodeURIComponent(email)}`)
         .then(response => {
-          if (!response.ok) {
-            throw new Error("Erreur lors de la récupération de la configuration");
-          }
+          if (!response.ok) throw new Error("Erreur lors de la récupération de la configuration");
           return response.json();
         })
         .then(config => {
-          const userInfo = document.getElementById('user-info');
-          userInfo.innerHTML = `
+          document.getElementById('user-info').innerHTML = `
             <div class="user-header">
               <img src="${config.picture}" alt="Photo de ${config.name}" />
               <h2>${config.name}</h2>
@@ -108,15 +95,10 @@ efefefefefeffeeffeeffeef
       const sendBtn = document.getElementById('send-btn');
       const voiceBtn = document.getElementById('voice-btn');
       const stopBtn = document.getElementById('stop-btn');
+      const stopSpeechBtn = document.getElementById('stop-speech-btn');
 
-      // Fonction de défilement vers le bas avec un léger délai pour permettre le rendu DOM
-      const scrollToBottom = () => {
-        setTimeout(() => {
-          chatLog.scrollTop = chatLog.scrollHeight;
-        }, 50);
-      };
+      const scrollToBottom = () => setTimeout(() => chatLog.scrollTop = chatLog.scrollHeight, 50);
 
-      // Fonction d'ajout d'un message classique (utilisée pour les messages utilisateurs et erreurs)
       const appendMessage = (message, className) => {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message ' + className;
@@ -125,20 +107,16 @@ efefefefefeffeeffeeffeef
         scrollToBottom();
       };
 
-      // Fonction d'affichage progressif avec rendu Markdown à chaque incrément
       const typeWriterMessage = (text, className, callback) => {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message ' + className;
         chatLog.appendChild(msgDiv);
         scrollToBottom();
         let i = 0;
-        const speed = 30; // Vitesse d'affichage en ms par caractère
+        const speed = 30;
         const timer = setInterval(() => {
           if (i < text.length) {
-            i++;
-            // Récupère la sous-chaîne actuelle et la parse avec Marked
-            const currentMarkdown = text.substring(0, i);
-            msgDiv.innerHTML = marked.parse(currentMarkdown);
+            msgDiv.innerHTML = marked.parse(text.substring(0, ++i));
             scrollToBottom();
           } else {
             clearInterval(timer);
@@ -147,57 +125,41 @@ efefefefefeffeeffeeffeef
         }, speed);
       };
 
-      // Arrête la synthèse vocale lorsqu'on clique sur le bouton Stop
       stopBtn.addEventListener('click', () => {
         speechSynthesis.cancel();
         stopBtn.style.display = 'none';
       });
 
-      // Fonction pour appeler l'API et afficher une animation durant l'attente
       const callAPI = async (prompt) => {
         try {
-          // Ajoute le message de l'utilisateur
           appendMessage(prompt, 'user-message');
-          // Ajoute le spinner indiquant le chargement
           const loadingSpinner = document.createElement('div');
           loadingSpinner.className = 'spinner';
           loadingSpinner.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
           chatLog.appendChild(loadingSpinner);
           scrollToBottom();
-          
-          // Appel à l'API
+
           const response = await fetch(`/cards/prompt/?email=${encodeURIComponent(email)}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'x-api-key': 'YOUR_API_KEY'
             },
-            body: JSON.stringify({
-              prompt: prompt,
-              sessionId: sessionId
-            })
+            body: JSON.stringify({ prompt, sessionId })
           });
-          
-          // Supprime le spinner après réception de la réponse
+
           chatLog.removeChild(loadingSpinner);
 
           if (!response.ok) {
-            const errorText = await response.text();
-            appendMessage('Erreur: ' + errorText, 'bot-message');
+            appendMessage('Erreur: ' + await response.text(), 'bot-message');
             return;
           }
-          
-          const markdownResponse = await response.text();
 
-          // Demarre immédiatement la lecture TTS si le prompt provient de la reconnaissance vocale
-          if (isVoiceInput) {
-            const cleanText = markdownResponse
-              .replace(/https?:\/\/\S+/g, '')
-              .replace(/\*/g, '');
-              if (isVoiceInput && voiceBtn.speakAuthorized) { voiceBtn.speakAuthorized(cleanText); }
+          const markdownResponse = await response.text();
+          if (isVoiceInput && voiceBtn.speakAuthorized) {
+            const cleanText = markdownResponse.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '');
+            voiceBtn.speakAuthorized(cleanText);
           }
-          
-          // Affiche le message progressivement avec rendu Markdown à chaque incrément
           typeWriterMessage(markdownResponse, 'bot-message');
         } catch (error) {
           const spinnerElem = document.querySelector('.spinner');
@@ -206,7 +168,6 @@ efefefefefeffeeffeeffeef
         }
       };
 
-      // Envoi du message lors du clic sur le bouton "Envoyer"
       sendBtn.addEventListener('click', () => {
         isVoiceInput = false;
         const prompt = messageInput.value.trim();
@@ -216,14 +177,10 @@ efefefefefeffeeffeeffeef
         }
       });
 
-      // Envoi du message avec la touche "Entrée"
       messageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          sendBtn.click();
-        }
+        if (e.key === 'Enter') sendBtn.click();
       });
 
-      // Mise en place de la reconnaissance vocale (Web Speech API)
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
@@ -231,16 +188,17 @@ efefefefefeffeeffeeffeef
         recognition.interimResults = true;
         recognition.continuous = true;
         recognition.maxAlternatives = 1;
-        
+
         let recordingTranscript = '';
         let silenceTimer = null;
-        
+
         recognition.onstart = () => {
           voiceBtn.style.background = 'red';
           recordingTranscript = '';
           messageInput.value = '';
+          stopSpeechBtn.style.display = 'inline-block';
         };
-        
+
         recognition.onresult = (event) => {
           let interimTranscript = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -251,7 +209,7 @@ efefefefefeffeeffeeffeef
             }
           }
           messageInput.value = recordingTranscript + interimTranscript;
-          
+
           if (silenceTimer) clearTimeout(silenceTimer);
           silenceTimer = setTimeout(() => {
             const finalText = messageInput.value.trim();
@@ -262,59 +220,48 @@ efefefefefeffeeffeeffeef
               messageInput.value = '';
             }
             recognition.stop();
-            voiceBtn.style.background = '#0000FF';
           }, 1000);
         };
-        
+
         recognition.onerror = (event) => {
           console.error('Erreur de reconnaissance vocale:', event.error);
-          voiceBtn.style.background = '#0000FF';
         };
-        
+
         recognition.onend = () => {
           voiceBtn.style.background = '#0000FF';
+          stopSpeechBtn.style.display = 'none';
         };
-        
-        function unlockAudioContext() {
-            const dummy = new SpeechSynthesisUtterance('');
-            speechSynthesis.speak(dummy);
-            speechSynthesis.cancel();
-            }
 
+        stopSpeechBtn.addEventListener('click', () => {
+          recognition.stop();
+          stopSpeechBtn.style.display = 'none';
+        });
 
-            voiceBtn.addEventListener('click', () => {
-                // 🔓 Débloque l'audio sur Safari
-                const dummy = new SpeechSynthesisUtterance('');
-                speechSynthesis.speak(dummy);
-                speechSynthesis.cancel();
+        voiceBtn.addEventListener('click', () => {
+          const dummy = new SpeechSynthesisUtterance('');
+          speechSynthesis.speak(dummy);
+          speechSynthesis.cancel();
 
-                voiceSubmitted = false;
-                isVoiceInput = true;
-                messageInput.value = '';
+          voiceSubmitted = false;
+          isVoiceInput = true;
+          messageInput.value = '';
+          recognition.start();
 
-                recognition.start();
-
-                // Préparer une promesse pour la future synthèse vocale (Safari friendly)
-                voiceBtn.speakAuthorized = (text) => {
-                    const synth = window.speechSynthesis;
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'fr-FR';
-                    utterance.rate = 1.1;
-                    utterance.pitch = 1.1;
-
-                    // Lecture vocale autorisée car encore dans la "chaîne" utilisateur
-                    synth.speak(utterance);
-                };
-                });
-
-
+          voiceBtn.speakAuthorized = (text) => {
+            const synth = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1.1;
+            utterance.pitch = 1.1;
+            synth.speak(utterance);
+          };
+        });
       } else {
         voiceBtn.disabled = true;
         voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
       }
     });
 
-    // Préchargement des voix pour la synthèse vocale dès que le DOM est prêt
     document.addEventListener('DOMContentLoaded', () => {
       window.speechSynthesis.getVoices();
     });
@@ -326,11 +273,8 @@ efefefefefeffeeffeeffeef
         chatContainer.style.height = `${window.innerHeight}px`;
       }
     }
-    
-    // Ajustement au chargement
     window.addEventListener('load', adjustChatHeight);
-    // Et quand on redimensionne (utile si la barre du navigateur disparaît)
     window.addEventListener('resize', adjustChatHeight);
-    </script>
+  </script>
 </body>
 </html>
