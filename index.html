@@ -9,7 +9,9 @@
 <body>
   <div id="chat-container">
     <div id="user-info"></div>
-    efefefefefeffeeffeeffeef
+    <div id="chat-log"></div>
+    
+efefefefefeffeeffeeffeef
     <button onclick="speakText()">Parler</button>
     <script>
     function speakText() {
@@ -18,7 +20,6 @@
         speechSynthesis.speak(utterance);
     }
     </script>
-    <div id="chat-log"></div>
 
     <div id="input-container">
       <input type="text" id="message-input" placeholder="Tapez votre question ici..." />
@@ -274,52 +275,6 @@
           voiceBtn.style.background = '#0000FF';
         };
         
-        voiceBtn.addEventListener('click', async () => {
-  voiceSubmitted = false;
-  messageInput.value = '';
-  
-  const synth = window.speechSynthesis;
-
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'fr-FR';
-  recognition.interimResults = false;
-
-  recognition.start();
-
-  recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    messageInput.value = transcript;
-    recognition.stop();
-
-    appendMessage(transcript, 'user-message'); // affiche dans le chat
-
-    // Appel API
-    const response = await fetch(`/cards/prompt/?email=${encodeURIComponent(email)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'YOUR_API_KEY'
-      },
-      body: JSON.stringify({
-        prompt: transcript,
-        sessionId: sessionId
-      })
-    });
-
-    const markdownResponse = await response.text();
-    const cleanText = markdownResponse.replace(/https?:\/\/\S+/g, '').replace(/\*/g, '');
-
-    // Affichage et lecture dans le même enchaînement
-    typeWriterMessage(markdownResponse, 'bot-message');
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 1.1;
-    utterance.pitch = 1.1;
-    synth.speak(utterance);
-  };
-});
-        /*
         voiceBtn.addEventListener('click', () => {
           if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
             const dummy = new SpeechSynthesisUtterance('');
@@ -335,11 +290,6 @@
         voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
       }
     });
-*/
-
-
-
-
 
     // Préchargement des voix pour la synthèse vocale dès que le DOM est prêt
     document.addEventListener('DOMContentLoaded', () => {
