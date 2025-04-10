@@ -16,15 +16,6 @@
     <div id="user-info"></div>
     <div id="chat-log"></div>
 
-    <button onclick="speakText()">Parler</button>
-    <script>
-      function speakText() {
-        const utterance = new SpeechSynthesisUtterance("Bonjour, comment ça va ?");
-        utterance.lang = "fr-FR";
-        speechSynthesis.speak(utterance);
-      }
-    </script>
-
     <div id="input-container">
       <input type="text" id="message-input" placeholder="Tapez votre question ici..." />
       <button id="voice-btn">🎤</button>
