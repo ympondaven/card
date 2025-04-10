@@ -93,7 +93,6 @@
 
     position: fixed;
     bottom: 0;
-    width: 100%;
   }
 
   #send-btn:hover, #voice-btn:hover, #stop-btn:hover {
