@@ -90,9 +90,6 @@
     border-radius: 8px;
     cursor: pointer;
     min-width: 50px;
-
-    position: fixed;
-    bottom: 0;
   }
 
   #send-btn:hover, #voice-btn:hover, #stop-btn:hover {
