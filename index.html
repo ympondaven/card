@@ -257,8 +257,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       window.speechSynthesis.getVoices();
     });
-  </script>
-  <script>
+
     function adjustChatHeight() {
       const chatContainer = document.getElementById('chat-container');
       if (chatContainer) {
@@ -267,12 +266,10 @@
     }
 
     function adjustButtonPosition() {
-    const buttons = document.querySelectorAll('.your-button-class');
-    const urlBarHeight = window.innerHeight - document.documentElement.clientHeight;
-    buttons.forEach(button => {
-        button.style.bottom = `${urlBarHeight}px`;
-    });
-}
+      const inputContainer = document.getElementById('input-container');
+      const urlBarHeight = window.innerHeight - document.documentElement.clientHeight;
+      inputContainer.style.bottom = `${urlBarHeight + 20}px`; /* Ajout d'un espace supplémentaire */
+    }
 
     window.addEventListener('load', adjustButtonPosition);
     window.addEventListener('resize', adjustButtonPosition);
