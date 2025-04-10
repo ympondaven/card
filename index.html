@@ -194,7 +194,7 @@ efefefefefeffeeffeeffeef
             const cleanText = markdownResponse
               .replace(/https?:\/\/\S+/g, '')
               .replace(/\*/g, '');
-            speakWhenReady(cleanText);
+              if (isVoiceInput && voiceBtn.speakAuthorized) { voiceBtn.speakAuthorized(cleanText); }
           }
           
           // Affiche le message progressivement avec rendu Markdown à chaque incrément
@@ -282,19 +282,32 @@ efefefefefeffeeffeeffeef
             }
 
 
-        voiceBtn.addEventListener('click', () => {
-          unlockAudioContext();
-          if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
-            const dummy = new SpeechSynthesisUtterance('');
-            speechSynthesis.speak(dummy);
-            speechSynthesis.cancel();
-          }
-          voiceSubmitted = false;
-          messageInput.value = '';
+            voiceBtn.addEventListener('click', () => {
+                // 🔓 Débloque l'audio sur Safari
+                const dummy = new SpeechSynthesisUtterance('');
+                speechSynthesis.speak(dummy);
+                speechSynthesis.cancel();
 
-          
-          recognition.start();
-        });
+                voiceSubmitted = false;
+                isVoiceInput = true;
+                messageInput.value = '';
+
+                recognition.start();
+
+                // Préparer une promesse pour la future synthèse vocale (Safari friendly)
+                voiceBtn.speakAuthorized = (text) => {
+                    const synth = window.speechSynthesis;
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'fr-FR';
+                    utterance.rate = 1.1;
+                    utterance.pitch = 1.1;
+
+                    // Lecture vocale autorisée car encore dans la "chaîne" utilisateur
+                    synth.speak(utterance);
+                };
+                });
+
+
       } else {
         voiceBtn.disabled = true;
         voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
