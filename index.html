@@ -275,7 +275,15 @@ efefefefefeffeeffeeffeef
           voiceBtn.style.background = '#0000FF';
         };
         
+        function unlockAudioContext() {
+            const dummy = new SpeechSynthesisUtterance('');
+            speechSynthesis.speak(dummy);
+            speechSynthesis.cancel();
+            }
+
+
         voiceBtn.addEventListener('click', () => {
+          unlockAudioContext();
           if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
             const dummy = new SpeechSynthesisUtterance('');
             speechSynthesis.speak(dummy);
@@ -283,6 +291,8 @@ efefefefefeffeeffeeffeef
           }
           voiceSubmitted = false;
           messageInput.value = '';
+
+          
           recognition.start();
         });
       } else {
