@@ -274,26 +274,7 @@
           voiceBtn.style.background = '#0000FF';
         };
         
-        /*
-        voiceBtn.addEventListener('click', () => {
-          if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
-            const dummy = new SpeechSynthesisUtterance('');
-            speechSynthesis.speak(dummy);
-            speechSynthesis.cancel();
-          }
-          voiceSubmitted = false;
-          messageInput.value = '';
-          recognition.start();
-        });
-      } else {
-        voiceBtn.disabled = true;
-        voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
-      }
-    });*/
-
-
-
-voiceBtn.addEventListener('click', async () => {
+        voiceBtn.addEventListener('click', async () => {
   voiceSubmitted = false;
   messageInput.value = '';
   
@@ -338,6 +319,26 @@ voiceBtn.addEventListener('click', async () => {
     synth.speak(utterance);
   };
 });
+        /*
+        voiceBtn.addEventListener('click', () => {
+          if (speechSynthesis && speechSynthesis.getVoices().length === 0) {
+            const dummy = new SpeechSynthesisUtterance('');
+            speechSynthesis.speak(dummy);
+            speechSynthesis.cancel();
+          }
+          voiceSubmitted = false;
+          messageInput.value = '';
+          recognition.start();
+        });
+      } else {
+        voiceBtn.disabled = true;
+        voiceBtn.title = 'Reconnaissance vocale non supportée par votre navigateur';
+      }
+    });
+*/
+
+
+
 
 
     // Préchargement des voix pour la synthèse vocale dès que le DOM est prêt
