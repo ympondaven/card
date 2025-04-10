@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Chat API Front</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  
   <link rel="stylesheet" href="./index.css">
   <style>
     #stop-speech-btn, #stop-btn {
@@ -264,9 +265,19 @@
         chatContainer.style.height = `${window.innerHeight - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)}px`;
       }
     }
-    window.addEventListener('load', adjustChatHeight);
-    window.addEventListener('resize', adjustChatHeight);
+
+    function adjustButtonPosition() {
+    const buttons = document.querySelectorAll('.your-button-class');
+    const urlBarHeight = window.innerHeight - document.documentElement.clientHeight;
+    buttons.forEach(button => {
+        button.style.bottom = `${urlBarHeight}px`;
+    });
+}
+
+    window.addEventListener('load', adjustButtonPosition);
+    window.addEventListener('resize', adjustButtonPosition);
     adjustChatHeight(); // Appel initial pour ajuster la hauteur au chargement
+    adjustButtonPosition();
   </script>
 </body>
 </html>
